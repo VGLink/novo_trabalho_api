@@ -1,35 +1,60 @@
-//tentando o api
-// renderizar pagina e DOM esteja totalmente carregado antes de executar o código
 document.addEventListener('DOMContentLoaded', function () {
-// Endpoint de todas as ligas
-const url = 'https://www.thesportsdb.com/api/v1/json/3/all_leagues.php';
+  const url = 'https://www.thesportsdb.com/api/v1/json/3/all_leagues.php';
+  const searchTeamsUrl = 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l='; 
 
-fetch(url)
-  .then(response => response.json())
-  .then(data => {
-    const ligas = data.leagues.filter(liga => liga.strSport === 'Soccer'&& liga.strLeague !== '_No League');
-    //tem que fazer um filtro porque o arquivo Json tem outros esportes alem do futebol
-    //tem que filtar uma linha com 'no league' para nao exibir na divExibição
+  // Variável para armazenar o conteúdo do modal
+  const modalContent = document.getElementById('modalContent');
 
-    // Mapeando as ligas e exibindo o nome da Liga e o país que acontece e o nome alternativo
-    const htmlArray = ligas.map(liga => {
-      console.log(`Nome da Liga: ${liga.strLeagueAlternate} \n Liga: ${liga.strLeague}`);
-      return `<div class="leagues">
-                <h2>${liga.strLeague}</h2>
-                <p>${liga.strLeagueAlternate}</p>
-                
-              </div>`;
-              
-    });
+  // Faça uma solicitação para a API 
+  fetch(url)
+      .then(response => response.json())
+      .then(data => {
+          const ligas = data.leagues.filter(liga => liga.strSport === 'Soccer' && liga.strLeague !== '_No League');
 
-    // Transforma o array de strings em uma única string
-    const htmlString = htmlArray.join('');
+          const htmlArray = ligas.map((liga, index) => {
+              console.log(`Nome da Liga: ${liga.strLeagueAlternate} \n Liga: ${liga.strLeague}`);
+              if (index === 0) {
+                  return `<div class="leagues">
+                              <a href="#" onclick="ligaClicada('${liga.strLeague}', '${searchTeamsUrl}')">
+                                  <h2>${liga.strLeague}</h2>
+                              </a>
+                              <p>${liga.strLeagueAlternate}</p>
+                          </div>`;
+              } else {
+                  return `<div class="leagues">
+                              <h2>${liga.strLeague}</h2>
+                              <p>${liga.strLeagueAlternate}</p>
+                          </div>`;
+              }
+          });
 
-    // Adiciona a string HTML ao DOM, por exemplo, dentro de um elemento com ID 'suaDiv'
-    document.getElementById('divExibicao').innerHTML = htmlString;
-  })
-  .catch(error => console.error('Erro na requisição:', error));
+          const htmlString = htmlArray.join('');
+          document.getElementById('divExibicao').innerHTML = htmlString;
+      })
+      .catch(error => console.error('Erro na requisição:', error));
+
+  // Função que será chamada quando o primeiro link for clicado
+  function ligaClicada(nomeLiga, searchTeamsUrl) {
+      // Faça uma nova solicitação para obter informações dos times
+      fetch('https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League')
+          .then(response => response.json())
+          .then(teamsData => {
+              // Exibe as informações dos times no modal
+              modalContent.innerHTML = '';
+
+              teamsData.teams.forEach(team => {
+                  const teamInfo = document.createElement('div');
+                  teamInfo.innerHTML = `<p>${team.strTeam}</p>
+                                        <p>${team.strStadium}</p>
+                                        <p>${team.strDescriptionPT}</p>`;
+                  modalContent.appendChild(teamInfo);
+              });
+
+              // Exibe o modal
+              const modal = document.getElementById('myModal');
+              modal.style.display = 'block';
+          })
+          .catch(error => console.error('Erro na requisição dos times:', error));
+  }
 });
-
- 
 
